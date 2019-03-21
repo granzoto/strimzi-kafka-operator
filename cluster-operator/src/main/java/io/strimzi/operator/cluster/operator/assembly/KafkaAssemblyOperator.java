@@ -576,13 +576,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 if (this.clusterCa.keyReplaced()) {
                     zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                         .compose(ss -> zkSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason,
+                        clusterCa.caCertSecret(),
                         oldCoSecret));
                 } else {
                     zkRollFuture = Future.succeededFuture();
                 }
                 return zkRollFuture
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
-                        .compose(ss -> kafkaSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason))
+                        .compose(ss -> kafkaSetOperations.maybeRollingUpdate(ss, rollPodAndLogReason,
+                                clusterCa.caCertSecret(),
+                                oldCoSecret))
                         .compose(i -> deploymentOperations.getAsync(namespace, io.strimzi.operator.cluster.model.TopicOperator.topicOperatorName(name)))
                         .compose(dep -> {
                             if (dep != null) {
